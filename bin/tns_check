@@ -14,7 +14,7 @@ from tnsdc import *
 
 # intended to be run daily as a script by a cron job
 # candidate discoveries are pulled from TNS, processed, and posted to Slack
-# expects a file called slack.webhook to exist in working directory that contains url only
+# expects a file called slack.webhook to exist in db directory that contains url only
 
 # -----------------------------------------------------------------------------------
 # default values (global)
@@ -57,11 +57,13 @@ def main(day_buffer, db):
 		alert_msg = 'Daily TNS Report {}\n'.format('{}-{:02}-{:02}'.format(end.year, end.month, end.day))
 		alert_msg += tabulate(new.loc[:,['ID', 'Name', 'RA', 'DEC', 'Discovering Group/s', 'Discovery Date (UT)', 'z_NED', 'Discovery Mag', 'Abs Mag']], 
 					 showindex = False, headers = 'keys', tablefmt = 'psql')
-		if not os.path.exists('slack.webhook'):
+		slack_loc = os.path.dirname(os.path.abspath(db))
+		slack = os.path.join(slack_loc, 'slack.webhook')
+		if not os.path.exists(slack):
 			print('file slack.webhook does not exist --- printing message instead')
 			print(alert_msg)
 			return
-		with open('slack.webhook', 'r') as f:
+		with open(slack, 'r') as f:
 			url = f.read().rstrip()
 		slack_alert(alert_msg, url)
 
