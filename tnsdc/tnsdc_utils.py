@@ -6,7 +6,7 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 from datetime import datetime, timedelta
 import requests
-from urllib import request, parse
+from urllib import request
 import json
 
 # configuration

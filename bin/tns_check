@@ -38,9 +38,12 @@ def main(day_buffer, db):
 	start = end - timedelta(days = day_buffer)
 	new = scrape_TNS(start, end)
 
-	# calculate redshift and absolute magnitude of discoveries
+	# get redshift
 	new['z_NED'] = new.apply(lambda row: get_z_ned(RA = row['RA'], DEC = row['DEC']), axis = 1)
+
+	# get distance and absolute mag
 	selector = new['z_NED'].notnull() & (new['z_NED'] > 0) & new['Discovery Mag'].notnull()
+	new.loc[selector, 'Distance (Mpc)'] = Distance(z = new.loc[selector, 'z_NED'])
 	new.loc[selector, 'Abs Mag'] = new.loc[selector, 'Discovery Mag'] * u.mag - Distance(z = new.loc[selector, 'z_NED']).distmod
 
 	if not os.path.exists(db):
@@ -55,7 +58,7 @@ def main(day_buffer, db):
 
 		# post Slack announcement
 		alert_msg = 'Daily TNS Report {}\n'.format('{}-{:02}-{:02}'.format(end.year, end.month, end.day))
-		alert_msg += tabulate(new.loc[:,['ID', 'Name', 'RA', 'DEC', 'Discovering Group/s', 'Discovery Date (UT)', 'z_NED', 'Discovery Mag', 'Abs Mag']], 
+		alert_msg += tabulate(new.loc[:,['ID', 'Name', 'RA', 'DEC', 'Discovering Group/s', 'Discovery Date (UT)', 'z_NED', 'Distance (Mpc)', 'Discovery Mag', 'Abs Mag']], 
 					 showindex = False, headers = 'keys', tablefmt = 'psql')
 		slack_loc = os.path.dirname(os.path.abspath(db))
 		slack = os.path.join(slack_loc, 'slack.webhook')
