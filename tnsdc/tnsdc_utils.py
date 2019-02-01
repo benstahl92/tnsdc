@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import requests
 from urllib import request
 import json
+import sfdmap
 
 # configuration
 pd.options.mode.chained_assignment = None
@@ -34,15 +35,24 @@ def get_z_ned(coord = None, RA = None, DEC = None):
         cand.loc[:,'sep'] = coord.separation(SkyCoord(ra = cand.loc[:,'RA(deg)'], dec = cand.loc[:,'DEC(deg)'], unit = (u.deg, u.deg)))
         return cand.sort_values(by = 'sep').iloc[0].loc['Redshift'].item()
 
+def vec_MW_extinction(RA, DEC, units = (u.hourangle, u.deg)):
+    '''
+    given vectors of RA and DEC, and tuple specifying their units, return a vector of E(B-V)
+    derived from Schlegel, Finkbeiner & Davis (1998) subject to recalibration of Schlafly & Finkbeiner (2011)
+    '''
+
+    coords = SkyCoord(RA, DEC, unit = units)
+    return sfdmap.ebv(coords)
+
 def scrape_TNS(start, end):
-	'''given start and and datetime objects, search TNS for candidate discoveries and return as DataFrame'''
+    '''given start and and datetime objects, search TNS for candidate discoveries and return as DataFrame'''
 
-	# format dates
-	start = '{}-{:02}-{:02}'.format(start.year, start.month, start.day)
-	end = '{}-{:02}-{:02}'.format(end.year, end.month, end.day)
+    # format dates
+    start = '{}-{:02}-{:02}'.format(start.year, start.month, start.day)
+    end = '{}-{:02}-{:02}'.format(end.year, end.month, end.day)
 
-	# setup search URL
-	url = ('https://wis-tns.weizmann.ac.il/search?&name=&name_like=0&isTNS_AT=yes&public=all'
+    # setup search URL
+    url = ('https://wis-tns.weizmann.ac.il/search?&name=&name_like=0&isTNS_AT=yes&public=all'
        '&unclassified_at=1&classified_sne=0&ra=&decl=&radius=&coords_unit=arcsec'
        '&groupid%5B%5D=null&classifier_groupid%5B%5D=null&objtype%5B%5D=null&at_type%5B%5D=null'
        '&date_start%5Bdate%5D={}&date_end%5Bdate%5D={}&discovery_mag_min=&discovery_mag_max='
@@ -57,13 +67,13 @@ def scrape_TNS(start, end):
        '&display%5Bdiscoverydate%5D=1&display%5Bdiscoverer%5D=0&display%5Bsources%5D=0'
        '&display%5Bbibcode%5D=1&display%5Bext_catalogs%5D=0&format=csv').format(start, end)
 
-	# execute search
-	session = requests.Session()
-	information = session.get(url)
-	decoded_information = information.content.decode('utf-8')
-	data = decoded_information.splitlines()
+    # execute search
+    session = requests.Session()
+    information = session.get(url)
+    decoded_information = information.content.decode('utf-8')
+    data = decoded_information.splitlines()
 
-	return pd.read_csv(io.StringIO('\n'.join(data)))
+    return pd.read_csv(io.StringIO('\n'.join(data)))
 
 def slack_alert(msg, url):
     '''post <msg> to Slack channel using incoming WebHooks url'''
