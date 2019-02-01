@@ -50,6 +50,9 @@ def main(day_buffer, db):
 	# get MW extinction
 	new.loc[:, 'E(B-V)'] = vec_MW_extinction(new.loc[:, 'RA'], new.loc[:, 'DEC'])
 
+	# create link
+	new.loc[:, 'TNS Link'] = 'https://wis-tns.weizmann.ac.il/object/' + new.loc[:, 'Name'].str.replace('AT ', '')
+
 	if not os.path.exists(db):
 		# write database
 		new.to_csv(db)
@@ -62,7 +65,7 @@ def main(day_buffer, db):
 
 		# post Slack announcement
 		alert_msg = 'Daily TNS Report {}\n'.format('{}-{:02}-{:02}'.format(end.year, end.month, end.day))
-		cols = ['ID', 'Name', 'RA', 'DEC', 'Discovering Group/s', 'Discovery Date (UT)', 'z_NED', 'E(B-V)', 'Distance (Mpc)', 'Discovery Mag', 'Abs Mag']
+		cols = ['ID', 'Name', 'RA', 'DEC', 'Discovering Group/s', 'Discovery Date (UT)', 'z_NED', 'E(B-V)', 'Distance (Mpc)', 'Discovery Mag', 'Abs Mag', 'TNS Link']
 		alert_msg += tabulate(new.loc[:,cols], 
 					 showindex = False, headers = 'keys', tablefmt = 'psql')
 		slack_loc = os.path.dirname(os.path.abspath(db))
