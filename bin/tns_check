@@ -55,18 +55,18 @@ def main(day_buffer, db):
 
 	if not os.path.exists(db):
 		# write database
-		new.to_csv(db)
+		new.sort_values('Discovery Date (UT)').to_csv(db)
 	else:
 		# compare to database to determine truly new discoveries and then update database
 		ref = pd.read_csv(db, index_col = 0)
 		new = new.loc[~new['ID'].isin(ref['ID']), :]
-		ref = pd.concat([ref, new], axis = 0)
-		ref.to_csv(db)
+		ref = pd.concat([ref, new], axis = 0, sort = False)
+		ref.sort_values('Discovery Date (UT)').to_csv(db)
 
 		# post Slack announcement
 		alert_msg = 'Daily TNS Report {}\n'.format('{}-{:02}-{:02}'.format(end.year, end.month, end.day))
 		cols = ['ID', 'Name', 'RA', 'DEC', 'Discovering Group/s', 'Discovery Date (UT)', 'z_NED', 'E(B-V)', 'Distance (Mpc)', 'Discovery Mag', 'Abs Mag', 'TNS Link']
-		alert_msg += tabulate(new.loc[:,cols], 
+		alert_msg += tabulate(new.loc[:,cols].sort_values('Discovery Date (UT)'), 
 					 showindex = False, headers = 'keys', tablefmt = 'psql')
 		slack_loc = os.path.dirname(os.path.abspath(db))
 		slack = os.path.join(slack_loc, 'slack.webhook')
