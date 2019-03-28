@@ -32,7 +32,9 @@ def get_z_ned(coord = None, RA = None, DEC = None):
         return cand['Redshift'].item()
     else:
         # rank by separation and use the closest
-        cand.loc[:,'sep'] = coord.separation(SkyCoord(ra = cand.loc[:,'RA(deg)'], dec = cand.loc[:,'DEC(deg)'], unit = (u.deg, u.deg)))
+        # NB: columns names apparently changed in NED query results in March 2019, hence the change
+        #cand.loc[:,'sep'] = coord.separation(SkyCoord(ra = cand.loc[:,'RA(deg)'], dec = cand.loc[:,'DEC(deg)'], unit = (u.deg, u.deg)))
+        cand.loc[:,'sep'] = coord.separation(SkyCoord(ra = cand.loc[:,'RA'], dec = cand.loc[:,'DEC'], unit = (u.deg, u.deg)))
         return cand.sort_values(by = 'sep').iloc[0].loc['Redshift'].item()
 
 def vec_MW_extinction(RA, DEC, units = (u.hourangle, u.deg)):
